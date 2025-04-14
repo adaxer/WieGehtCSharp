@@ -37,5 +37,6 @@ class Program
 
         // Ausgabe
         Console.WriteLine(greeting);
+        File.WriteAllText("Result.txt", "Habe " + name + " zum " + age+ ". gratuliert");
     }
 }
