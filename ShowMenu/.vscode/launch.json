@@ -1,0 +1,11 @@
+{
+    "version": "0.2.0",
+    "configurations": [{
+        "name": "Debug ShowMenu",
+        "type": "coreclr",
+        "request": "launch",
+        "program": "${workspaceFolder}/bin/Debug/net9.0/ShowMenu.dll",
+        "console": "externalTerminal",
+        "args": []
+      }]
+}
