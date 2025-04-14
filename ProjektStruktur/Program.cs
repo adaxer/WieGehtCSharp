@@ -1,4 +1,6 @@
-﻿namespace ProjektStruktur;
+﻿using System.Text.Json;
+
+namespace ProjektStruktur;
 
 class Program
 {
@@ -8,8 +10,17 @@ class Program
         int age;
 
         // Eingabe
-        if (args.Length == 2)
+        if (args.Length == 1)
         {
+            Console.WriteLine("Lese aus Datei " + args[0]);
+            var json = File.ReadAllText(args[0]);
+            var person = JsonSerializer.Deserialize<Person>(json);
+            name=person.Name;
+            age=person.Age;
+        }
+        else if (args.Length == 2)
+        {
+            Console.WriteLine("Lese aus Args " + args[0]+ " " + args[1]);
             name = args[0];
             age = int.Parse(args[1]);
         }
