@@ -1,0 +1,12 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug LocalizeHelper C#",
+            "type": "coreclr",
+            "request": "launch",
+            "program": "${workspaceFolder}/bin/Debug/net9.0/LocalizeHelper.dll",
+            //"args": [ "CsvToResx", "Demo.translation.csv", "EN", "FR"]
+        }
+    ]
+}
