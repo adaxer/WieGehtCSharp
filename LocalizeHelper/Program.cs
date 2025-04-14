@@ -1,4 +1,5 @@
-﻿using System.Xml.Linq;
+﻿using System.Windows.Input;
+using System.Xml.Linq;
 
 namespace LocalizeHelper;
 
@@ -7,17 +8,73 @@ class Program
     static void Main(string[] args)
     {
         var commandInfo = CommandInfo.Create(args);
-        Action<CommandInfo> action = commandInfo.Command switch
+        Func<CommandInfo, Result> action = GetActionForCommand(commandInfo.Command);
+        Console.WriteLine(action(commandInfo).Message);
+
+        bool canClose = action == MakeCsv || action == MakeResx || action == ShowUsage;
+        Command newCommand = Command.None;
+        string filePath = string.Empty;
+        string[] languageCodes = [];
+
+        while (!canClose)
+        {
+            var showMenu = true;
+            var key = Console.ReadKey(true).Key.ToString();
+            switch (key)
+            {
+                case "C":
+                    newCommand = newCommand == Command.CsvToResx ? Command.ResxToCsv : Command.CsvToResx;
+                    break;
+                case "F":
+                    Console.CursorVisible = true;
+                    Console.SetCursorPosition(startX + 13, startY + 2);
+                    filePath = Console.ReadLine() ?? string.Empty;
+                    break;
+                case "S":
+                    Console.CursorVisible = true;
+                    Console.SetCursorPosition(startX + 12, startY + 3);
+                    languageCodes = (Console.ReadLine() ?? string.Empty).ToUpper().Split(' ', ',');
+                    break;
+                case "A":
+                    string[] newArgs = [newCommand.ToString(), filePath];
+                    commandInfo = CommandInfo.Create(newArgs.Concat(languageCodes).ToArray());
+                    var result = GetActionForCommand(newCommand).Invoke(commandInfo);
+                    if (!result.Succeeded)
+                    {
+                        ShowMenu(Command.Invalid, string.Empty, []);
+                    }
+                    PrintAt(0, 7 + menuItems.Length, result.Message);
+                    showMenu = false;
+                    canClose = result.Succeeded;
+                    break;
+                case "Q":
+                    canClose = true;
+                    break;
+            }
+            if (showMenu)
+            {
+                ShowMenu(newCommand, filePath, languageCodes);
+            }
+        }
+    }
+
+    private static Func<CommandInfo, Result> GetActionForCommand(Command command)
+    {
+        return command switch
         {
             Command.ResxToCsv => MakeCsv,
             Command.CsvToResx => MakeResx,
-            Command.None => ShowMenu,
+            Command.None => c =>
+            {
+                ShowMenu(c.Command, c.FilePath, c.LanguageCodes);
+                return Result.Success();
+            }
+            ,
             _ => ShowUsage,
         };
-        action(commandInfo);
     }
 
-    private static void MakeCsv(CommandInfo info)
+    private static Result MakeCsv(CommandInfo info)
     {
         try
         {
@@ -34,14 +91,15 @@ class Program
             csv = csv.Concat(data.Select(kvp => createLine(kvp.Key, kvp.Value, langEmpties))).ToList();
 
             File.WriteAllLines(info.OutputPath, csv);
+            return Result.Success($"Csv {info.OutputPath} erzeugt");
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"MakeCsv nicht erfolgreich, Fehlermeldung: {ex.Message}");
+            return Result.Failure(ex.Message);
         }
     }
 
-    private static void MakeResx(CommandInfo info)
+    private static Result MakeResx(CommandInfo info)
     {
         try
         {
@@ -63,10 +121,11 @@ class Program
                 var data = csv.Skip(1).ToDictionary(a => a[0], a => a[i + 2]);
                 CreateResx(fileName, data);
             }
+            return Result.Success($"ResX zu {info.FilePath} erzeugt");
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"MakeCsv nicht erfolgreich, Fehlermeldung: {ex.Message}");
+            return Result.Failure(ex.Message);
         }
     }
 
@@ -96,7 +155,7 @@ class Program
             new XAttribute("name", "writer"),
             new XElement("value", "System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"))
     }.AsReadOnly();
-    private static void ShowUsage(CommandInfo info)
+    private static Result ShowUsage(CommandInfo info)
     {
         var usage = "\nVerwendung:\nLocalizeHelper [ResxToCsv|Csv2Resx] <filePath> <languages>\n";
         usage += "\nBeispiel:\nLocalizeHelper ResxToCsv my.de.resx en fr\n";
@@ -105,10 +164,42 @@ class Program
         usage += "Erzeugt aus my.translation.csv die Dateien my.EN.resx und my.FR.resx";
         usage += "\n\nLocalizeHelper\nzeigt interaktives Menü.";
         Console.WriteLine(usage);
+        return Result.Success();
     }
 
-    private static void ShowMenu(CommandInfo info)
+    private static void ShowMenu(Command command, string filePath, string[] languages)
     {
-        Console.WriteLine("Menu: ...");
+        Console.Clear();
+
+        PrintAt(0, 0, "LocalizeHelper");
+        PrintAt(2, 1, $"Command: {command}");
+        PrintAt(2, 2, $"File-Pfad: {filePath}");
+        PrintAt(2, 3, $"Sprachen: {string.Join(',', languages)}");
+        for (int i = 0; i < menuItems.Length; i++)
+        {
+            Console.SetCursorPosition(startX, startY + 5 + i);
+            Console.Write(menuItems[i]);
+        }
+
+        Console.CursorVisible = false; // Cursor aus dem Weg
     }
+
+    private static void PrintAt(int relX, int relY, string message)
+    {
+        Console.SetCursorPosition(startX + relX, startY + relY);
+        Console.Write(message);
+        Console.SetCursorPosition(0, Console.WindowHeight - 1); // Cursor aus dem Weg
+    }
+
+    static string[] menuItems = {
+        "C - Command umschalten",
+        "F - File-Pfad eingeben (z.B. 'my.de.resx')",
+        "S - Sprachen eingeben (z.B. en fr)",
+        "A - Ausführen",
+        "",
+        "Q - Beenden"
+    };
+
+    static int startX = Console.WindowWidth / 2 - 6; // leicht nach links versetzt für Ausgewogenheit
+    static int startY = Console.WindowHeight / 2 - (menuItems.Length + 5) / 2;
 }

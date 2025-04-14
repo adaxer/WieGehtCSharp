@@ -1,8 +1,8 @@
 {
   "profiles": {
     "LocalizeHelper": {
-      "commandName": "Project",
-      "commandLineArgs": "ResxToCsv\r\nDemo.de.resx\r\nEN\r\nFR"
+      "commandName": "Project"
+//      "commandLineArgs": "ResxToCsv\r\nDemo.de.resx\r\nEN\r\nFR"
     }
   }
 }
