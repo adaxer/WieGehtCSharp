@@ -56,6 +56,7 @@ class Program
                 ShowMenu(newCommand, filePath, languageCodes);
             }
         }
+        Console.CursorVisible = true;
     }
 
     private static Func<CommandInfo, Result> GetActionForCommand(Command command)

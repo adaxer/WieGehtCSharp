@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics;
 
-var sourcePath = Path.GetFullPath("..\\..\\..\\..\\bin\\debug\\net9.0");
+var sourcePath = Path.GetFullPath("..\\..\\..\\..\\LocalizeHelper\\bin\\debug\\net9.0");
 var resx = Path.Combine(sourcePath, "Demo.de.resx");
 
 File.Copy(resx, "Demo.de.resx", true);
